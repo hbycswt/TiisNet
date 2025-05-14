@@ -1,0 +1,71 @@
+# Model Information
+# GFLOPs  GMACs   Params.(M)
+#  15.24   7.53    7.125
+# Throughput (ins./s): 115.24562648667185
+
+model:
+  NAME: BaseSeg
+  encoder_args:
+    NAME: TiisEncoder2
+    blocks: [1, 3, 5, 3, 3]
+    strides: [1, 4, 4, 4, 4]
+    sa_layers: 1 
+    sa_use_res: False 
+    width: 32
+    in_channels: 6 #PNM  feature 
+    expansion: 1 #4
+    radius: 0.05
+    nsample: 32
+    aggr_args:
+      feature_type: 'dp_fj'
+      reduction: 'max'
+    group_args:
+      NAME: 'ballquery'
+      normalize_dp: True
+    conv_args:
+      order: conv-norm-act
+    act_args:
+      act: 'relu'
+    norm_args:
+      norm: 'bn'
+  decoder_args:
+    NAME: PointNextDecoder
+  cls_args:
+    NAME: SegHead
+    globals: max  # append global feature to each point feature
+    num_classes: 2 
+    in_channels: null
+    norm_args:
+      norm: 'bn'
+
+
+batch_size: 60
+test_species: all # all menas test in all species; seen means test in seen species; unseen means test in unseen species
+cls_group1: 0,1,2,3,4,5,6,7,8,9,10  # obj_classes = {0:'floor', 1:'wall', 2:'cabinet', 3:'bed', 4: 'chair', 5:'sofa', 6:'table', 7:'door', 8:'window', 9:'bookshelf', 10:'picture',
+                # 11:'counter', 12:'desk', 13:'curtain', 14:'refrigerator', 15:'bathtub', 16:'shower curtain', 17:'toilet', 18:'sink', 19:'otherfurniture'}
+cls_group2: 11,12,13,14,15,16,17,18,19
+click_channel: 3 # 1: one positive click,  2: pos_clicks + neg_clicks
+##------------------test paremters-----------
+test_threshold: 0.80 # NoC@IoU // 1.0: means test IoU_NUM // other value For NoC@IoU
+test_iters: 10
+pretrained_path: log/interactivesg4/interactivesg4-train-TiisNet2-trainScan-ngpus1-seed5581-20231119-173655-ZvCu6dCPERqUytTS2RFoym/checkpoint/interactivesg4-train-TiisNet2-trainScan-ngpus1-seed5581-20231119-173655-ZvCu6dCPERqUytTS2RFoymAVG_CLICK_ckpt_latest.pth
+##--------------------------------------------
+dataset:
+  common:
+    NAME: scannet_clicks
+    data_root: data/scannet_clicks
+    numpoints: 8192
+    split_ratio: 0.5,0.5  #tr_ratio
+    click_flag2train: True # means: no clicking strategies
+    click_flag2test: True
+    voxel_size: 0.02
+  train:
+    split: train
+    voxel_max: null  # using 32000 points can make training faster but achieves ~0.5 miou lower for PointNeXt-XL 
+  val:
+    split: val
+    voxel_max: null 
+  test:
+    split: val 
+    voxel_max: null
+
